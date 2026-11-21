@@ -26,7 +26,16 @@ def run(user_input, memory: Memory, max_steps: int = 100) -> str:
 
         print(f'* [第 {step} 轮] LLM 返回, 工具调用={command[:50]}', flush=True)
 
-        output = run_bash(command)
+        try:
+            output = run_bash(command)
+        except Exception as exc:
+            print(f'* [第 {step} 轮] 工具执行失败, 内容={exc}', flush=True)
+            user_input = textwrap.dedent(f'''
+                [Tool Result] Bash 命令执行失败，失败信息如下：
+                {exc}
+                请根据以上结果继续回答用户的问题。
+            ''').strip()
+            continue
 
         print(f'* [第 {step} 轮] 工具结果, 内容={output[:50]}', flush=True)
 
