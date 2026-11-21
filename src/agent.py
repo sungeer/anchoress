@@ -1,6 +1,6 @@
 import textwrap
 
-from src import prompt, settings, utils
+from src import utils
 from src.llm import chat
 from src.memory import Memory
 from src.tool import run_bash

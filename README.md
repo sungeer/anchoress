@@ -1,33 +1,43 @@
 # hostess
 
-A minimal AI coding agent that runs in your terminal. Built on the LangChain stack.
+A minimal AI coding agent that runs in your terminal. One tool, one loop, no framework.
 
 ## Why this exists
 
 Corporate intranets forbid installing third-party coding tools, and only a limited set of
-packages is available. This project started from a ReAct loop script written on the LangChain
-stack and grew into a working substitute.
+packages is available. This project started from a ReAct loop script and grew into a working
+substitute.
 
 It is meant to read project code, write documentation, write demos, find bugs, and produce
 revised code modules.
 
 Design constraints follow from that:
 
-- **Three tools only.** `bash`, `read`, `write`. Nothing else.
+- **One tool only.** `bash`. Nothing else.
 - **No high-risk tools.** The agent never modifies existing files; it answers with a unified
   diff you apply yourself.
 - **High user competence assumed.** This is not a one-click tool. You review what it does.
 
-It talks to any OpenAI-compatible chat API (DeepSeek by default) and logs each run to `logs/`.
+## How it works
+
+`run.py` starts a REPL. Each turn sends the whole conversation to a chat completions endpoint.
+If the reply contains a ```` ```bash ```` block, that block is run in Git Bash, and its output is
+sent back as the next message so the model can continue. When a reply has no ```` ```bash ```` block,
+that reply is the final answer. One turn is capped at 100 LLM calls.
+
+This is prompt convention, not function calling: the model is told to use ```` ```text ```` fences
+when it wants to show shell examples rather than run them.
 
 ## Requirements
 
-- Python 3.11+
+- Python 3.10+
 - Git Bash on Windows (`bash.exe`)
 
 ```bash
-python -m pip install python-dotenv langchain-openai
+python -m pip install python-dotenv httpx2
 ```
+
+For tests: `python -m pip install pytest`
 
 ## Quick Start
 
@@ -40,13 +50,21 @@ MODEL=deepseek-flash
 BASH_PATH=C:\Apps\Git\bin\bash.exe
 ```
 
-Run:
+`BASH_PATH` is required — there is no fallback. Start the agent from the directory you want it
+to work in:
 
 ```bash
 python run.py
 ```
 
 Or `bin/hostess.bat` if the paths inside match your machine.
+
+## Endpoint
+
+`src/llm.py` currently posts to `https://api.deepseek.com/chat/completions` and sends
+`thinking: {type: disabled}`, a DeepSeek-specific field. Point it at another
+OpenAI-compatible endpoint and you must change the URL in code and probably drop that field.
+`API_BASE_URL` is loaded into `settings.LLM_URL` but not yet used.
 
 ## Commands
 
@@ -59,9 +77,7 @@ Or `bin/hostess.bat` if the paths inside match your machine.
 
 | Tool | Function | Parameters |
 |------|----------|------------|
-| `bash` | Run a bash command with the project root as cwd; returns stdout, stderr and exit code | `command`, `timeout` (seconds, default 30) |
-| `read` | Read a file with line numbers, paginated via `offset`/`limit` | `file_path`, `offset`, `limit` |
-| `write` | Create a new file (parent directories created); existing files are refused | `file_path`, `content` |
+| `bash` | Run a bash command in the startup directory; returns merged stdout + stderr line count capped at the last 2000 lines, then the exit code | `command`, `timeout` (seconds, no timeout by default) |
 
-All listing and searching go through `bash`: `ls`, `find`, `rg` (falling back to `grep -rn`).
-Output is truncated at 20,000 characters with the exit code appended.
+Listing, searching and reading all go through `bash`: `ls`, `find`, `rg`, `cat`, `sed -n`.
+Writing a new file goes through `bash` too, via heredoc; existing files are not overwritten.

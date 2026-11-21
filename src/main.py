@@ -22,6 +22,7 @@ def main() -> None:
         try:
             user_input = input('\n> ').strip()
         except (EOFError, KeyboardInterrupt):
+            httpx.close()
             print('\n* Bye！')
             break
 
@@ -29,6 +30,7 @@ def main() -> None:
             continue
 
         if user_input.lower() in ('/exit', '/q', '/quit'):
+            httpx.close()
             print('\n* Bye！')
             break
 
