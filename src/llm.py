@@ -1,33 +1,39 @@
-import httpx2 as httpx
-from langchain_openai import ChatOpenAI
-
 from src import settings
+from src.http import httpx
+from src.memory import Memory
 
-http_client = httpx.Client(
-    timeout=httpx.Timeout(
-        connect=5.0,
-        read=180.0,
-        write=5.0,
-        pool=5.0
-    ),
-    limits=httpx.Limits(
-        max_connections=5,
-        keepalive_expiry=0.0,
-    ),
-    verify=False,
-)
 
-llm = ChatOpenAI(
-    model=settings.LLM_MODEL,
-    base_url=settings.LLM_URL,
-    api_key=settings.LLM_KEY,
-    streaming=False,
-    extra_body={
-        'thinking': {
-            'type': 'disabled'
-        }
-    },
-    http_client=http_client,
-    temperature=0.0,
-    http_socket_options=(),
-)
+def chat(memory: Memory) -> str:
+    url = 'https://api.deepseek.com/chat/completions'
+
+    headers = {
+        'Authorization': f'Bearer {settings.LLM_KEY}',
+        'Content-Type': 'application/json'
+    }
+
+    messages: list = memory.get_messages()
+
+    payload = {
+        'model': settings.LLM_MODEL,
+        'messages': messages,
+        'stream': False,
+        'thinking': {'type': 'disabled'}
+    }
+
+    client = httpx.get_client()
+
+    response = client.post(url, headers=headers, json=payload)
+
+    response.raise_for_status()
+
+    data = response.json()
+    # print(f'llm response data:\n{data}')
+
+    choices = data.get('choices')
+    choice, *_ = choices
+
+    message = choice.get('message')
+
+    content = message.get('content')
+
+    return content

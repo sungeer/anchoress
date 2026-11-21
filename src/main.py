@@ -1,19 +1,22 @@
 import logging
 
-from src.logger import setup_logger
 from src.memory import Memory
+from src.prompt import system_prompt
+from src.http import httpx
 from src import agent
 
 logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    setup_logger()
+    httpx.init()
 
     print('* An agentic tool that lives in your terminal.')
     print('* Press /exit to quit, /clear to clear memory')
 
+    system_message = {'role': 'system', 'content': system_prompt}
     memory = Memory()
+    memory.add(system_message)
 
     while True:
         try:
@@ -31,6 +34,7 @@ def main() -> None:
 
         if user_input.lower() == '/clear':
             memory.clear()
+            memory.add(system_message)
             print('* 记忆已清空，开始新对话')
             continue
 
