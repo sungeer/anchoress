@@ -40,9 +40,8 @@ def main() -> None:
 
         try:
             result = agent.run(user_input, memory)
-        except Exception:
-            logger.exception('本次请求失败')
-            print('· 本次请求失败，详情见日志记录')
+        except Exception as exc:
+            print(f'● 本次请求失败:\n{exc}')
             continue
 
-        print(f'· {result}')
+        print(f'● {result}')

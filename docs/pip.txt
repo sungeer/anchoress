@@ -19,3 +19,5 @@ C:\Projects\hostess\.venv\Scripts\python.exe C:\Projects\hostess\run.py
 
 
 
+脚本'C:\Users\Administrator\Desktop\test.py'写的是否有bug？
+
