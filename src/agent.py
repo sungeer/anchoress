@@ -11,7 +11,7 @@ def run(user_input, memory: Memory, max_steps: int = 100) -> str:
         user_message = {'role': 'user', 'content': user_input}
         memory.add(user_message)
 
-        print(f'* [第 {step} 轮] 调用 LLM, 上下文消息数={len(memory.get_messages())}', flush=True)
+        print(f'* [step-{step}] touch llm, start', flush=True)
 
         content = chat(memory)
 
@@ -21,15 +21,15 @@ def run(user_input, memory: Memory, max_steps: int = 100) -> str:
         command = utils.split_bash(content)
 
         if not command:
-            print(f'* [第 {step} 轮] 无工具调用, 结束', flush=True)
+            print(f'* [step-{step}] no tool, end', flush=True)
             return content
 
-        print(f'* [第 {step} 轮] LLM 返回, 工具调用={command[:50]}', flush=True)
+        print(f'* [step-{step}] tool command, command={command[:100]}', flush=True)
 
         try:
             output = run_bash(command)
         except Exception as exc:
-            print(f'* [第 {step} 轮] 工具执行失败, 内容={exc}', flush=True)
+            print(f'* [step-{step}] tool error, error={exc}', flush=True)
             user_input = textwrap.dedent(f'''
                 [Tool Result] Bash 命令执行失败，失败信息如下：
                 {exc}
@@ -37,7 +37,7 @@ def run(user_input, memory: Memory, max_steps: int = 100) -> str:
             ''').strip()
             continue
 
-        print(f'* [第 {step} 轮] 工具结果, 内容={output[:50]}', flush=True)
+        print(f'* [step-{step}] tool result, result={output[:100]}', flush=True)
 
         user_input = textwrap.dedent(f'''
             [Tool Result] Bash 命令执行完毕，输出如下：
